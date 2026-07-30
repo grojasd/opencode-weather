@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun run build
+      - name: Determinar nombre del binario
+        id: binary
+        shell: bash
+        run: |
+          OS_LABEL=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            echo "artifact_name=weather-${OS_LABEL}" >> $GITHUB_OUTPUT
+            echo "binary_path=out/weather.exe" >> $GITHUB_OUTPUT
+          else
+            echo "artifact_name=weather-${OS_LABEL}" >> $GITHUB_OUTPUT
+            echo "binary_path=out/weather" >> $GITHUB_OUTPUT
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.binary.outputs.artifact_name }}
+          path: ${{ steps.binary.outputs.binary_path }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+      - name: Extraer versión del package.json
+        id: version
+        run: echo "version=v$(node -p \"require('./package.json').version\")" >> $GITHUB_OUTPUT
+      - name: Crear tag si no existe
+        id: tag_check
+        run: |
+          if git tag -l "${{ steps.version.outputs.version }}" | grep -q .; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            git tag "${{ steps.version.outputs.version }}"
+            git push origin "${{ steps.version.outputs.version }}"
+          fi
+      - uses: actions/download-artifact@v4
+      - name: Aplanar binarios fuera de los directorios de artefacto
+        shell: bash
+        run: |
+          for dir in weather-*/; do
+            dir=${dir%/}
+            binary=$(find "$dir" -type f | head -1)
+            ext="${binary##*.}"
+            if [ "$ext" = "exe" ]; then
+              mv "$binary" "${dir}.exe"
+            else
+              mv "$binary" "${dir}.bin"
+            fi
+            rmdir "$dir"
+            if [ "$ext" != "exe" ]; then
+              mv "${dir}.bin" "$dir"
+            fi
+          done
+      - name: Crear Release
+        uses: softprops/action-gh-release@v2
+        if: steps.tag_check.outputs.exists != 'true'
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Release ${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          files: weather-*
