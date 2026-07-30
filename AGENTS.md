@@ -8,12 +8,13 @@
 | Action | Command |
 |---|---|
 | Run | `bun run index.ts` |
+| Test | `bun test` |
 | Typecheck | `bunx tsc --noEmit` |
 | Add dep | `bun add <pkg>` |
 | Init project | `bun init` |
-| Build binary (future) | `bun build --compile ./index.ts --outfile ./out/weather` |
+| Build (tests + compile) | `bun run build` — runs tests first, only compiles if all pass |
 
-No package.json scripts exist yet. `bun test` uses the built-in test runner (none written yet).
+`bun test` uses the built-in test runner (tests in `tests/`).
 
 ## Entrypoints
 - `index.ts` — single entrypoint (`"module": "index.ts"` in package.json).
