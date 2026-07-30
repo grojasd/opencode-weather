@@ -1,0 +1,23 @@
+{
+  "cities": [
+    {
+      "name": "Santiago de Chile",
+      "latitude": -33.45694,
+      "longitude": -70.64827,
+      "country": "Chile"
+    },
+    {
+      "name": "La Serena",
+      "latitude": -29.90591,
+      "longitude": -71.25014,
+      "country": "Chile"
+    }
+  ],
+  "unit": "celsius",
+  "defaultCity": {
+    "name": "Santiago de Chile",
+    "latitude": -33.45694,
+    "longitude": -70.64827,
+    "country": "Chile"
+  }
+}
