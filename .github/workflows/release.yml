@@ -41,21 +41,9 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-tags: true
       - name: Extraer versión del package.json
         id: version
         run: echo "version=v$(node -p \"require('./package.json').version\")" >> $GITHUB_OUTPUT
-      - name: Crear tag si no existe
-        id: tag_check
-        run: |
-          if git tag -l "${{ steps.version.outputs.version }}" | grep -q .; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-            git tag "${{ steps.version.outputs.version }}"
-            git push origin "${{ steps.version.outputs.version }}"
-          fi
       - uses: actions/download-artifact@v4
       - name: Aplanar binarios fuera de los directorios de artefacto
         shell: bash
@@ -74,11 +62,17 @@ jobs:
               mv "${dir}.bin" "$dir"
             fi
           done
-      - name: Crear Release
-        uses: softprops/action-gh-release@v2
-        if: steps.tag_check.outputs.exists != 'true'
-        with:
-          tag_name: ${{ steps.version.outputs.version }}
-          name: Release ${{ steps.version.outputs.version }}
-          generate_release_notes: true
-          files: weather-*
+      - name: Crear o actualizar release con gh CLI
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.version.outputs.version }}"
+          if gh release view "$TAG" --json tagName &>/dev/null; then
+            echo "Release $TAG ya existe — subiendo binarios..."
+            gh release upload "$TAG" weather-* --clobber
+          else
+            echo "Creando release $TAG..."
+            gh release create "$TAG" weather-* \
+              --generate-notes \
+              --title "Release $TAG"
+          fi
