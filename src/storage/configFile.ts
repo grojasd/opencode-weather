@@ -1,5 +1,5 @@
 import * as fs from "node:fs";
-import type { Config } from "./types";
+import type { Config } from "../types/City";
 
 const CONFIG_FILE = "weather-config.json";
 

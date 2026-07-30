@@ -5,13 +5,6 @@ export interface City {
   country?: string;
 }
 
-export interface DailyForecast {
-  date: string;
-  tempMax: number;
-  tempMin: number;
-  weatherCode: number;
-}
-
 export interface Config {
   defaultCity?: City;
   cities: City[];

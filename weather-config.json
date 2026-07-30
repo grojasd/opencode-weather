@@ -11,6 +11,12 @@
       "latitude": -29.90591,
       "longitude": -71.25014,
       "country": "Chile"
+    },
+    {
+      "name": "Los Ángeles",
+      "latitude": -37.46973,
+      "longitude": -72.35366,
+      "country": "Chile"
     }
   ],
   "unit": "celsius",
